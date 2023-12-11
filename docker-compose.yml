@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  workout:
+    container_name: workout
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${APPDATA}workout:/config
+    ports:
+      - 3306:3306
+    networks:
+      - default
+      - workout
+    restart: always
+
+  db:
+    image: ghcr.io/linuxserver/mariadb
+    container_name: db
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PW}
+      MYSQL_DATABASE: ${DB_HOST}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PW}
+    volumes:
+      - ${APPDATA}db:/config
+    ports:
+      - 3306:3306
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${APPDATA}redis:/data
+    restart: always
+
+networks:
+  workout:
+    external: true

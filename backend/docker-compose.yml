@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   workout:
@@ -17,31 +17,26 @@ services:
     restart: always
 
   db:
-    image: ghcr.io/linuxserver/mariadb
+    image: postgres
     container_name: db
     environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
-      TZ: ${TZ}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PW}
-      MYSQL_DATABASE: ${DB_HOST}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PW}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    user: '${PUID}:${PGID}'
     volumes:
-      - ${APPDATA}db:/config
+      - ./db:/var/lib/postgresql/data
     ports:
-      - 3306:3306
+      - 5432:5432
     restart: always
 
-  redis:
-    image: redis:alpine
-    container_name: redis
-    environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
-      TZ: ${TZ}
+  adminer:
+    image: adminer
+    container_name: adminer
     volumes:
-      - ${APPDATA}redis:/data
+      - ${APPDATA}adminer:/adminer
+    ports:
+      - 8080:8080
     restart: always
 
 networks:

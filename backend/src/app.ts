@@ -1,25 +1,23 @@
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
-import morgan from 'morgan';
-import logger from './utils/logger';
+import express, { Express, NextFunction, Request, Response, json, urlencoded } from 'express';
+import dotenv from 'dotenv';
+import userRoutes from './routes/v1/userRoutes';
 
-const app = express();
+dotenv.config();
 
-// Middleware configurations
-app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+const app: Express = express();
 
-// Morgan integration with Winston for logging HTTP requests
-app.use(
-	morgan('tiny', {
-		stream: { write: (message) => logger.info(message.trim()) },
-	}),
-);
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
 
-// Define your routes here
+app.use('/api/v1/users', userRoutes);
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err);
+  res.status(500).send('Internal Server Error');
+});
 
 export default app;

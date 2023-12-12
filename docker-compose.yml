@@ -1,16 +1,16 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  workout:
-    container_name: workout
+  backend:
+    build: ./backend
+    container_name: backend
     environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
-      TZ: ${TZ}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ${APPDATA}workout:/config
     ports:
-      - 3306:3306
+      - ${BACKEND_PORT}:3000
     networks:
       - default
       - workout
@@ -23,9 +23,9 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    user: '${PUID}:${PGID}'
+    user: "${PUID}:${PGID}"
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - ./backend/db:/var/lib/postgresql/data
     ports:
       - 5432:5432
     restart: always

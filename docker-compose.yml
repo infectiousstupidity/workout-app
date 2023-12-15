@@ -1,20 +1,20 @@
 version: "3.8"
 
 services:
-  backend:
-    build: ./backend
-    container_name: backend
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-    volumes:
-      - ${APPDATA}workout:/config
-    ports:
-      - ${BACKEND_PORT}:3000
-    networks:
-      - default
-      - workout
-    restart: always
+  # backend:
+  #   build: ./backend
+  #   container_name: backend
+  #   environment:
+  #     - DATABASE_URL=${DATABASE_URL}
+  #     - JWT_SECRET=${JWT_SECRET}
+  #   volumes:
+  #     - ${APPDATA}workout:/config
+  #   ports:
+  #     - ${BACKEND_PORT}:3000
+  #   networks:
+  #     - default
+  #     - workout
+  #   restart: always
 
   db:
     image: postgres
@@ -23,9 +23,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    user: "${PUID}:${PGID}"
     volumes:
-      - ./backend/db:/var/lib/postgresql/data
+      - ./backend/db/postgresql:/var/lib/postgresql/data
     ports:
       - 5432:5432
     restart: always
@@ -34,9 +33,9 @@ services:
     image: adminer
     container_name: adminer
     volumes:
-      - ${APPDATA}adminer:/adminer
+      - ./backend/db/adminer:/adminer
     ports:
-      - 8080:8080
+      - 1313:8080
     restart: always
 
 networks:

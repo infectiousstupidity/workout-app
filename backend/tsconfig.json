@@ -15,8 +15,10 @@
       "noUncheckedIndexedAccess": true,
     },
     "include": [
-      "src/**/*"
-    ],
+      "src/**/**/*",
+      "prisma/**/*",
+      "__tests__/**/*"
+, "db.ts"    ],
     "exclude": [
       "node_modules",
       "**/*.spec.ts"

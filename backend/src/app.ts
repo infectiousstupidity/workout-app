@@ -1,23 +1,16 @@
-import express, { Express, NextFunction, Request, Response, json, urlencoded } from 'express';
-import dotenv from 'dotenv';
-import userRoutes from './routes/v1/userRoutes';
+import express from 'express';
+import morgan from 'morgan';
+import logger from './utilities/logger/logger';
+import { handleError } from './middleware/error-middleware';
+import userRoutes from './api/users/user-routes';
 
-dotenv.config();
+const app = express();
 
-const app: Express = express();
-
-app.use(json());
-app.use(urlencoded({ extended: true }));
-
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
-
-app.use('/api/v1/users', userRoutes);
-
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-  res.status(500).send('Internal Server Error');
-});
+app.use(express.json());
+app.use(
+  morgan('combined', { stream: { write: (message) => logger.info(message) } }),
+);
+app.use('/api/users', userRoutes);
+app.use(handleError);
 
 export default app;

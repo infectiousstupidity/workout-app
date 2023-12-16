@@ -1,9 +1,6 @@
-import {
-  Router,
-  type Request,
-  type Response,
-  type NextFunction,
-} from 'express';
+import { Router } from 'express';
+import { authenticateJwt } from '../../middleware/jwt-auth-middleware';
+import { asyncHandler } from '../../utilities/errors/async-handler';
 import {
   createUser,
   deleteUser,
@@ -13,17 +10,9 @@ import {
 
 const router = Router();
 
-function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>,
-) {
-  return function (req: Request, res: Response, next: NextFunction): void {
-    fn(req, res, next).catch(next);
-  };
-}
-
-router.post('/users', asyncHandler(createUser));
-router.get('/users', asyncHandler(getUsers));
-router.put('/users/:id', asyncHandler(updateUser));
-router.delete('/users/:id', asyncHandler(deleteUser));
+router.post('/users', authenticateJwt, asyncHandler(createUser));
+router.get('/users', authenticateJwt, asyncHandler(getUsers));
+router.put('/users/:id', authenticateJwt, asyncHandler(updateUser));
+router.delete('/users/:id', authenticateJwt, asyncHandler(deleteUser));
 
 export default router;

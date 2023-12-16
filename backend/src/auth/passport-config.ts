@@ -1,26 +1,36 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type User } from '@prisma/client';
 
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET ?? 'your-secret-key',
 };
+
 const prisma = new PrismaClient();
 
+const findUser = async (id: number): Promise<User | null> => {
+  try {
+    return await prisma.user.findUnique({ where: { id } });
+  } catch (error) {
+    console.error('Error finding user:', error);
+    return null;
+  }
+};
+
 passport.use(
-  new JwtStrategy(options, async (jwtPayload, done) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: jwtPayload.userId },
+  new JwtStrategy(options, (jwtPayload, done) => {
+    findUser(Number(jwtPayload.userId))
+      .then((user) => {
+        if (user != null) {
+          done(null, user);
+        } else {
+          done(null, false);
+        }
+      })
+      .catch((error) => {
+        done(error, false);
       });
-      if (user !== null && user !== undefined) {
-        return done(null, user);
-      }
-      return done(null, false);
-    } catch (error) {
-      return done(error, false);
-    }
   }),
 );
 

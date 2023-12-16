@@ -6,5 +6,6 @@ export class ErrorHandler extends Error {
     super(message);
     this.statusCode = statusCode;
     this.message = message;
+    console.error(`Error: ${message}`, { statusCode, stack: this.stack });
   }
 }

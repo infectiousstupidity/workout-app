@@ -9,10 +9,141 @@ import {
 } from './user-controller';
 
 const router = Router();
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           format: int64
+ *           example: 1
+ *         username:
+ *           type: string
+ *           example: john_doe
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john@example.com
+ *     UserInput:
+ *       type: object
+ *       properties:
+ *         username:
+ *           type: string
+ *           example: john_doe
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john@example.com
+ *         password:
+ *           type: string
+ *           example: password123
+ *         roleId:
+ *           type: integer
+ *           example: 1
+ */
+/**
+ * @swagger
+ * /api/v1/users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - jwt: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserInput'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request
+ */
+router.post('/', authenticateJwt, asyncHandler(createUser));
 
-router.post('/users', authenticateJwt, asyncHandler(createUser));
-router.get('/users', authenticateJwt, asyncHandler(getUsers));
-router.put('/users/:id', authenticateJwt, asyncHandler(updateUser));
-router.delete('/users/:id', authenticateJwt, asyncHandler(deleteUser));
+/**
+ * @swagger
+ * /api/v1/users:
+ *   get:
+ *     summary: Retrieve a list of users
+ *     tags: [Users]
+ *     security:
+ *       - jwt: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ */
+router.get('/', authenticateJwt, asyncHandler(getUsers));
+
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     security:
+ *       - jwt: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserInput'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ */
+router.put('/:id', authenticateJwt, asyncHandler(updateUser));
+
+/**
+ * @swagger
+ * /api/v1/users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - jwt: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       404:
+ *         description: User not found
+ */
+router.delete('/:id', authenticateJwt, asyncHandler(deleteUser));
 
 export default router;

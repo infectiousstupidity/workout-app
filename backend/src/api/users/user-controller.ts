@@ -8,6 +8,7 @@ import {
   deleteUserSchema,
 } from './user-validation';
 import { ZodError } from 'zod';
+import logger from '../../utilities/logger/logger';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,7 @@ export const createUser = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
+    logger.info('Creating user', { body: req.body });
     const validatedData = createUserSchema.parse(req.body);
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
@@ -36,6 +38,7 @@ export const createUser = async (
 
     res.status(201).json(newUser);
   } catch (error) {
+    logger.error('Error creating user', { error });
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.flatten() });
     } else {
@@ -46,9 +49,11 @@ export const createUser = async (
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    logger.info('Getting users', { body: req.body });
     const users = await prisma.user.findMany();
     res.status(200).json(users);
   } catch (error) {
+    logger.error('Error getting user', { error });
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
@@ -60,6 +65,7 @@ export const updateUser = async (
 ): Promise<void> => {
   const { id } = req.params;
   try {
+    logger.info('Updating user', { body: req.body });
     const validatedData = updateUserSchema.parse(req.body);
 
     const updatedUser = await prisma.user.update({
@@ -73,6 +79,7 @@ export const updateUser = async (
 
     res.status(200).json(updatedUser);
   } catch (error) {
+    logger.error('Error updating user', { error });
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.flatten() });
     } else if (
@@ -92,6 +99,7 @@ export const deleteUser = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
+    logger.info('Deleting user', { body: req.body });
     const params = deleteUserSchema.parse({ id: Number(req.params.id) });
 
     await prisma.user.delete({
@@ -100,6 +108,7 @@ export const deleteUser = async (
 
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
+    logger.error('Error deleting user', { error });
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2001'

@@ -23,3 +23,29 @@ export const login = async (
     next(error);
   }
 };
+
+export const register = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const {
+      username,
+      email,
+      password,
+    }: { username: string; email: string; password: string } = req.body;
+    logger.info('Register attempt', { email, username });
+    const user = await AuthService.register(username, email, password);
+    if (user != null) {
+      logger.info('Registration successful', { email, username });
+      res.status(201).json(user);
+    } else {
+      logger.warn('Registration failed', { email, username });
+      res.status(400).send('Registration failed');
+    }
+  } catch (error) {
+    logger.error('Error in registration', { error });
+    next(error);
+  }
+};

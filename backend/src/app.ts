@@ -7,7 +7,7 @@ import userRoutes from './api/users/user-routes';
 import { handleError } from './middleware/error-middleware';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-
+import { generalLimiter, authLimiter } from './middleware/rate-limiting';
 import dotenv from 'dotenv';
 
 const app = express();
@@ -30,15 +30,17 @@ const options = {
 
 const swaggerSpec = swaggerJSDoc(options);
 
-// Disabling TypeScript lint for this line because swaggerUi.serve returns an array that is compatible with Express middleware
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(generalLimiter);
 app.use(helmetConfig);
 app.use(requestLogger);
 app.use(express.json());
 app.use(passport.initialize());
-app.use('/api/v1/auth', authRoutes);
+
+app.use('/api/v1/auth', authLimiter, authRoutes);
+
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/users', userRoutes);
+
 app.use(handleError);
 
 export default app;

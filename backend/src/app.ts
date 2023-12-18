@@ -4,6 +4,7 @@ import helmetConfig from './utilities/security/helmet';
 import passport from './auth/passport-config';
 import authRoutes from './auth/auth-routes';
 import userRoutes from './api/users/user-routes';
+import exerciseRoutes from './api/exercises/exercise-routes';
 import { handleError } from './middleware/error-middleware';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
@@ -40,6 +41,7 @@ app.use('/api/v1/auth', authLimiter, authRoutes);
 
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/exercise', exerciseRoutes);
 
 app.use(handleError);
 

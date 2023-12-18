@@ -19,6 +19,7 @@ model User {
   updatedAt        DateTime         @updatedAt
   workouts         Workout[]
   workoutHistories WorkoutHistory[]
+  exercises        Exercise[]
 }
 
 model Role {
@@ -37,6 +38,7 @@ model Exercise {
   workouts    Workout[]
   sets        Set[]
   increments  Increment[]
+  user        User        @relation(fields: [userId], references: [id])
 
   @@unique([name, userId])
 }

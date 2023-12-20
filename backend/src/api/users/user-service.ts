@@ -1,48 +1,51 @@
-import { type User } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import logger from '../../utilities/logger/logger';
 import * as UserModel from './user-model';
+import { type User } from '@prisma/client';
+import logger from '../../utilities/logger/logger';
+import { type UserUpdatePayload } from './user-types';
 
-export const registerUser = async (userData: {
-  username: string;
-  email: string;
-  password: string;
-  roleId: number;
-}): Promise<User> => {
-  logger.info('Registering new user', {
-    username: userData.username,
-    email: userData.email,
-  });
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
-  const registeredUser = await UserModel.createUser({
-    ...userData,
-    password: hashedPassword,
-  });
-  logger.info('User registered successfully', { userId: registeredUser.id });
-  return registeredUser;
+export const getUserById = async (id: number): Promise<User | null> => {
+  try {
+    const user = await UserModel.findUserById(id);
+    logger.info('User service: User retrieved', { userId: id });
+    return user;
+  } catch (error) {
+    logger.error('Error getting user by ID in service', { error });
+    throw error;
+  }
 };
 
-export const getUser = async (id: number): Promise<User | null> => {
-  logger.info('Getting user by ID', { id });
-  return await UserModel.findUserById(id);
+export const listAllUsers = async (): Promise<User[]> => {
+  try {
+    const users = await UserModel.findAllUsers();
+    logger.info('User service: All users listed');
+    return users;
+  } catch (error) {
+    logger.error('Error listing all users in service', { error });
+    throw error;
+  }
 };
 
-export const listUsers = async (): Promise<User[]> => {
-  logger.info('Listing all users');
-  return await UserModel.findAllUsers();
-};
-
-export const editUser = async (
+export const updateUser = async (
   id: number,
-  userData: { username?: string; email?: string; roleId?: number },
-): Promise<void> => {
-  logger.info('Editing user', { id, updatedData: userData });
-  await UserModel.updateUserById(id, userData);
-  logger.info('User updated successfully', { id });
+  userData: UserUpdatePayload,
+): Promise<User> => {
+  try {
+    const updatedUser = await UserModel.updateUserById(id, userData);
+    logger.info('User service: User updated', { userId: id });
+    return updatedUser;
+  } catch (error) {
+    logger.error('Error updating user in service', { error });
+    throw error;
+  }
 };
 
-export const removeUser = async (id: number): Promise<void> => {
-  logger.info('Removing user', { id });
-  await UserModel.deleteUserById(id);
-  logger.info('User removed successfully', { id });
+export const deleteUser = async (id: number): Promise<User> => {
+  try {
+    const deletedUser = await UserModel.deleteUserById(id);
+    logger.info('User service: User deleted', { userId: id });
+    return deletedUser;
+  } catch (error) {
+    logger.error('Error deleting user in service', { error });
+    throw error;
+  }
 };

@@ -1,12 +1,7 @@
 import { Router } from 'express';
 import { authenticateJwt } from '../../middleware/jwt-auth-middleware';
 import { asyncHandler } from '../../utilities/errors/async-handler';
-import {
-  createUser,
-  deleteUser,
-  getUsers,
-  updateUser,
-} from './user-controller';
+import { deleteUser, getUsers, updateUser } from './user-controller';
 
 const router = Router();
 /**
@@ -45,31 +40,6 @@ const router = Router();
  *           example: 1
  */
 /**
- * @swagger
- * /api/v1/users:
- *   post:
- *     summary: Create a new user
- *     tags: [Users]
- *     security:
- *       - jwt: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UserInput'
- *     responses:
- *       201:
- *         description: User created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       400:
- *         description: Bad request
- */
-router.post('/', authenticateJwt, asyncHandler(createUser));
-
 /**
  * @swagger
  * /api/v1/users:

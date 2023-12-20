@@ -7,77 +7,65 @@ datasource db {
   url      = "postgresql://myuser:mypassword@localhost:5432/mydatabase"
 }
 
+// User model representing an application user
 model User {
-  id               Int              @id @default(autoincrement())
-  username         String
-  email            String           @unique
-  password         String
-  roleId           Int
-  role             Role             @relation(fields: [roleId], references: [id])
-  emailVerified    Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  workouts         Workout[]
-  workoutHistories WorkoutHistory[]
-  exercises        Exercise[]
+  id               Int              @id @default(autoincrement()) // Auto-incremented unique identifier
+  username         String           @unique // Unique username for the user
+  email            String           @unique // User's email address, unique across users
+  password         String // Hashed password (never store in plain text)
+  createdAt        DateTime         @default(now()) // Timestamp of user creation
+  updatedAt        DateTime         @updatedAt // Timestamp of the last user update
+  workouts         Workout[] // Relation to user's workouts
+  exercises        Exercise[] // Relation to user's exercises
+  workoutHistories WorkoutHistory[] // Relation to user's workout history
+  workoutPrograms  WorkoutProgram[] // Relation to user's workout programs
 }
 
-model Role {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  users User[]
-}
-
-model Exercise {
-  id          Int         @id @default(autoincrement())
-  name        String
-  userId      Int
-  description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  workouts    Workout[]
-  sets        Set[]
-  increments  Increment[]
-  user        User        @relation(fields: [userId], references: [id])
-
-  @@unique([name, userId])
-}
-
+// Workout model representing a workout session
 model Workout {
-  id                Int              @id @default(autoincrement())
-  name              String
-  userId            Int
-  exerciseId        Int
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  user              User             @relation(fields: [userId], references: [id])
-  exercise          Exercise         @relation(fields: [exerciseId], references: [id])
-  sets              Set[]
-  skipNextIncrement Boolean          @default(false)
-  workoutHistories  WorkoutHistory[]
+  id               Int               @id @default(autoincrement()) // Unique identifier for the workout
+  name             String // Name of the workout
+  userId           Int // User ID to link the workout to a specific user
+  createdAt        DateTime          @default(now()) // Timestamp when the workout was created
+  updatedAt        DateTime          @updatedAt // Timestamp when the workout was last updated
+  user             User              @relation(fields: [userId], references: [id]) // Relation to the user
+  workoutExercises WorkoutExercise[] // Relation to the exercises within the workout
+  workoutHistories WorkoutHistory[] // Relation to the workout's historical records
+  programDays      ProgramDay[] // Relation to program days that include this workout
+
+  @@unique([name, userId]) // Composite unique constraint for name and user
+}
+
+// Exercise model representing an individual exercise
+model Exercise {
+  id               Int               @id @default(autoincrement()) // Unique identifier for the exercise
+  name             String
+  userId           Int
+  incrementValue   Float             @default(2.5) // Increment value for the exercise (weight increase)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id])
+  workoutExercises WorkoutExercise[] // Relation to the workouts that include this exercise
+  sets             Set[] // Relation to sets performed for this exercise
 
   @@unique([name, userId])
 }
 
-model Set {
-  id         Int      @id @default(autoincrement())
-  workoutId  Int
-  exerciseId Int
-  targetReps Int
-  actualReps Int
-  weight     Float
-  date       DateTime
-  workout    Workout  @relation(fields: [workoutId], references: [id])
-  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+// Model linking workouts and exercises, along with additional details like sets and reps
+model WorkoutExercise {
+  workoutId     Int
+  exerciseId    Int
+  sets          Int // Number of sets
+  reps          Int // Number of reps per set
+  skipIncrement Boolean  @default(false) // Flag to skip increment for this exercise
+  workout       Workout  @relation(fields: [workoutId], references: [id])
+  exercise      Exercise @relation(fields: [exerciseId], references: [id])
+  repsPerSet    Rep[] // Relation to rep details for each set
+
+  @@id([workoutId, exerciseId])
 }
 
-model Increment {
-  id             Int      @id @default(autoincrement())
-  exerciseId     Int
-  incrementValue Float
-  exercise       Exercise @relation(fields: [exerciseId], references: [id])
-}
-
+// Model for tracking workout history
 model WorkoutHistory {
   id          Int      @id @default(autoincrement())
   workoutId   Int
@@ -86,4 +74,57 @@ model WorkoutHistory {
   comments    String?
   workout     Workout  @relation(fields: [workoutId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
+  sets        Set[]
+
+  @@unique([workoutId, performedAt, userId])
+}
+
+// Model representing a set within a workout
+model Set {
+  id               Int            @id @default(autoincrement())
+  workoutHistoryId Int
+  exerciseId       Int
+  targetReps       Int // Target number of reps for this set
+  actualReps       Int // Actual number of reps performed
+  weight           Float // Weight used in the set
+  date             DateTime
+  workoutHistory   WorkoutHistory @relation(fields: [workoutHistoryId], references: [id])
+  exercise         Exercise       @relation(fields: [exerciseId], references: [id])
+}
+
+// Model for tracking reps details within a workout exercise
+model Rep {
+  id                        Int             @id @default(autoincrement())
+  workoutExerciseWorkoutId  Int
+  workoutExerciseExerciseId Int
+  setNumber                 Int // Identifies the set number in a workout
+  targetReps                Int
+  actualReps                Int // Actual number of reps performed
+  workoutExercise           WorkoutExercise @relation(fields: [workoutExerciseWorkoutId, workoutExerciseExerciseId], references: [workoutId, exerciseId]) // Relation to the WorkoutExercise
+
+  @@unique([setNumber, workoutExerciseWorkoutId, workoutExerciseExerciseId])
+}
+
+// Model representing a workout program
+model WorkoutProgram {
+  id          Int          @id @default(autoincrement())
+  name        String
+  userId      Int
+  duration    Int // Duration of the program in days or weeks
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id])
+  programDays ProgramDay[] // Relation to the days within the program
+}
+
+// Model representing a specific day in a workout program
+model ProgramDay {
+  id               Int            @id @default(autoincrement())
+  dayOfWeek        String // Day of the week (e.g., "Monday")
+  workoutId        Int? // Optional Workout ID for the day
+  workout          Workout?       @relation(fields: [workoutId], references: [id]) // Optional relation to a workout
+  workoutProgramId Int // WorkoutProgram ID to link to the program
+  workoutProgram   WorkoutProgram @relation(fields: [workoutProgramId], references: [id]) // Relation to the workout program
+
+  @@unique([dayOfWeek, workoutProgramId]) // Composite unique constraint for day of the week within a program
 }

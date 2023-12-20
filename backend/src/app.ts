@@ -37,7 +37,7 @@ app.use(requestLogger);
 app.use(express.json());
 app.use(passport.initialize());
 
-app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/', authLimiter, authRoutes);
 
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/users', userRoutes);

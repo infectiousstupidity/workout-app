@@ -9,16 +9,20 @@ datasource db {
 
 // User model representing an application user
 model User {
-  id               Int              @id @default(autoincrement())
-  username         String           @unique
-  email            String           @unique
-  password         String
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  workouts         Workout[]
-  exercises        Exercise[]
-  workoutHistories WorkoutHistory[]
-  workoutPrograms  WorkoutProgram[]
+  id                     Int                      @id @default(autoincrement())
+  username               String                   @unique
+  email                  String                   @unique
+  password               String
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  workouts               Workout[]
+  exercises              Exercise[]
+  workoutHistories       WorkoutHistory[]
+  workoutPrograms        WorkoutProgram[]
+  GlobalExerciseProgress GlobalExerciseProgress[]
+  UserPreference         UserPreference?
+  PersonalBest           PersonalBest[]
+  WorkoutSchedule        WorkoutSchedule[]
 }
 
 // Role model representing a user role
@@ -32,6 +36,33 @@ enum RoleName {
   ADMIN
 }
 
+// UserPreference model representing user preferences
+model UserPreference {
+  id                    Int     @id @default(autoincrement())
+  userId                Int
+  defaultIncrementValue Float   @default(2.5)
+  measurementUnit       String  @default("kg") // Or "lbs"
+  reminders             Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+}
+
+// PersonalBest model representing a personal best for a user
+model PersonalBest {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  exerciseId Int
+  weight     Float
+  date       DateTime
+
+  user     User     @relation(fields: [userId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([userId, exerciseId])
+}
+
 // Workout model representing a workout session
 model Workout {
   id               Int               @id @default(autoincrement())
@@ -43,35 +74,41 @@ model Workout {
   workoutExercises WorkoutExercise[]
   workoutHistories WorkoutHistory[]
   programDays      ProgramDay[]
+  WorkoutSchedule  WorkoutSchedule[]
 
   @@unique([name, userId])
 }
 
 // Exercise model representing an individual exercise
 model Exercise {
-  id               Int               @id @default(autoincrement())
-  name             String
-  userId           Int
-  incrementValue   Float             @default(2.5) // Increment value for the exercise (weight increase)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  user             User              @relation(fields: [userId], references: [id])
-  workoutExercises WorkoutExercise[]
-  sets             Set[]
+  id                             Int                              @id @default(autoincrement())
+  name                           String
+  userId                         Int
+  incrementValue                 Float                            @default(2.5) // Increment value for the exercise (weight increase)
+  createdAt                      DateTime                         @default(now())
+  updatedAt                      DateTime                         @updatedAt
+  user                           User                             @relation(fields: [userId], references: [id])
+  workoutExercises               WorkoutExercise[]
+  sets                           Set[]
+  WorkoutProgramExerciseProgress WorkoutProgramExerciseProgress[]
+  GlobalExerciseProgress         GlobalExerciseProgress[]
+  PersonalBest                   PersonalBest[]
 
   @@unique([name, userId])
 }
 
 // Model linking workouts and exercises, along with additional details like sets and reps
 model WorkoutExercise {
-  workoutId     Int
-  exerciseId    Int
-  sets          Int
-  reps          Int
-  skipIncrement Boolean  @default(false) // Flag to skip increment for this exercise
-  workout       Workout  @relation(fields: [workoutId], references: [id])
-  exercise      Exercise @relation(fields: [exerciseId], references: [id])
-  repsPerSet    Rep[]
+  workoutId      Int
+  exerciseId     Int
+  initialWeight  Float    @default(0) // Initial weight for the exercise
+  incrementValue Float    @default(2.5) // Increment value for the exercise
+  sets           Int
+  reps           Int
+  skipIncrement  Boolean  @default(false)
+  workout        Workout  @relation(fields: [workoutId], references: [id])
+  exercise       Exercise @relation(fields: [exerciseId], references: [id])
+  Rep            Rep[]
 
   @@id([workoutId, exerciseId])
 }
@@ -101,6 +138,8 @@ model Set {
   date             DateTime
   workoutHistory   WorkoutHistory @relation(fields: [workoutHistoryId], references: [id])
   exercise         Exercise       @relation(fields: [exerciseId], references: [id])
+
+  @@index([workoutHistoryId, exerciseId])
 }
 
 // Model for tracking reps details within a workout exercise
@@ -118,14 +157,15 @@ model Rep {
 
 // Model representing a workout program
 model WorkoutProgram {
-  id          Int          @id @default(autoincrement())
-  name        String
-  userId      Int
-  duration    Int // Duration of the program in days or weeks
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  user        User         @relation(fields: [userId], references: [id])
-  programDays ProgramDay[]
+  id                             Int                              @id @default(autoincrement())
+  name                           String
+  userId                         Int
+  duration                       Int // Duration of the program in days or weeks
+  createdAt                      DateTime                         @default(now())
+  updatedAt                      DateTime                         @updatedAt
+  user                           User                             @relation(fields: [userId], references: [id])
+  programDays                    ProgramDay[]
+  WorkoutProgramExerciseProgress WorkoutProgramExerciseProgress[]
 }
 
 // Model representing a specific day in a workout program
@@ -136,6 +176,47 @@ model ProgramDay {
   workout          Workout?       @relation(fields: [workoutId], references: [id])
   workoutProgramId Int
   workoutProgram   WorkoutProgram @relation(fields: [workoutProgramId], references: [id])
+  scheduledAt      DateTime? // Optional specific time for the workout
 
-  @@unique([dayOfWeek, workoutProgramId])
+  @@unique([dayOfWeek, workoutProgramId, workoutId])
+}
+
+// Model representing the progress of a user in a workout program
+model WorkoutProgramExerciseProgress {
+  id             Int   @id @default(autoincrement())
+  programId      Int
+  exerciseId     Int
+  currentWeight  Float // Current weight for the exercise in this program
+  incrementValue Float // Increment value for the exercise in this program
+
+  workoutProgram WorkoutProgram @relation(fields: [programId], references: [id])
+  exercise       Exercise       @relation(fields: [exerciseId], references: [id])
+
+  @@unique([programId, exerciseId])
+}
+
+model GlobalExerciseProgress {
+  id         Int   @id @default(autoincrement())
+  userId     Int
+  exerciseId Int
+  lastWeight Float // Last performed weight globally
+  nextWeight Float // Next weight to be used globally
+
+  user     User     @relation(fields: [userId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([userId, exerciseId])
+}
+
+model WorkoutSchedule {
+  id          Int      @id @default(autoincrement())
+  workoutId   Int
+  userId      Int
+  scheduledAt DateTime
+  reminder    Boolean  @default(false)
+
+  workout Workout @relation(fields: [workoutId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([workoutId, scheduledAt, userId])
 }
